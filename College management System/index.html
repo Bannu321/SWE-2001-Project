@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>College Management System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-dark: #2c3e50; --primary-light: #34495e; --accent-teal: #1abc9c;
+            --accent-green: #2ecc71; --accent-yellow: #f1c40f; --accent-red: #e74c3c;
+            --text-dark: #34495e; --text-light: #ecf0f1; --bg-light: #f8f9fa;
+            --card-bg: #ffffff; --border-color: #e0e0e0; --font-family-sans-serif: 'Poppins', sans-serif;
+        }
+        body { background-color: var(--bg-light); font-family: var(--font-family-sans-serif); color: var(--text-dark); overflow-x: hidden; }
+        #wrapper { display: flex; }
+        #content-wrapper { width: 100%; overflow-x: hidden; }
+        .sidebar { width: 250px; min-height: 100vh; background: linear-gradient(180deg, var(--primary-dark) 0%, var(--primary-light) 100%); color: var(--text-light); transition: margin-left 0.3s ease-in-out; box-shadow: 2px 0 10px rgba(0,0,0,0.1); }
+        .sidebar-brand { height: 70px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: 700; text-transform: uppercase; border-bottom: 1px solid rgba(255,255,255,0.1); color: var(--text-light); }
+        .sidebar-brand i { margin-right: 0.5rem; font-size: 1.5rem; }
+        .sidebar .nav-link { color: rgba(255, 255, 255, 0.7); font-weight: 500; padding: 0.9rem 1.5rem; transition: all 0.15s ease; border-left: 4px solid transparent; display: flex; align-items: center; }
+        .sidebar .nav-link:hover, .sidebar .nav-link.active { color: #fff; background: rgba(255, 255, 255, 0.1); border-left: 4px solid var(--accent-teal); }
+        .sidebar .nav-link i { margin-right: 1rem; font-size: 1.1rem; }
+        .topbar { height: 70px; box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.08); background: var(--card-bg); border-bottom: 1px solid var(--border-color); }
+        .user-profile img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+        .card { border: none; box-shadow: 0 0.5rem 1.5rem rgba(0,0,0,0.08); margin-bottom: 1.5rem; border-radius: 0.75rem; background-color: var(--card-bg); }
+        .card-header { display: flex; justify-content: space-between; align-items: center; background-color: var(--card-bg); border-bottom: 1px solid var(--border-color); font-weight: 600; color: var(--primary-dark); padding: 1.25rem 1.5rem; font-size: 1.1rem; border-top-left-radius: 0.75rem; border-top-right-radius: 0.75rem; }
+        .login-container { display: flex; justify-content: center; align-items: center; min-height: 100vh; background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-light) 100%); }
+        .login-card { width: 100%; max-width: 450px; background: var(--card-bg); border-radius: 1rem; box-shadow: 0 1.5rem 4rem rgba(0,0,0,0.2); overflow: hidden; border: none; z-index: 10; }
+        .login-card .card-header { background: linear-gradient(90deg, var(--accent-teal) 0%, #16a085 100%); color: white; border-bottom: none; padding: 2rem 1.5rem; }
+        .btn-primary { background-color: var(--accent-teal); border-color: var(--accent-teal); }
+        .btn-primary:hover { background-color: #16a085; border-color: #16a085; }
+        .marks-input { width: 65px; text-align: center; }
+        a { color: var(--accent-teal); text-decoration: none; } a:hover { color: #16a085; text-decoration: underline; }
+        .form-check-input:checked { background-color: var(--accent-teal); border-color: var(--accent-teal); }
+        .progress-label { font-size: 0.8rem; font-weight: 500; }
+        .total-grade { font-size: 2.5rem; font-weight: 700; }
+        .grade-card .progress { height: 1.25rem; }
+        .attendance-card .progress { height: 2.5rem; font-size: 1.2rem; font-weight: 600;}
+        .attendance-percentage { font-size: 2rem; font-weight: 600; }
+        @media (max-width: 768px) {
+            .sidebar { position: fixed; top: 0; left: -250px; z-index: 1030; transition: left 0.3s ease-in-out; }
+            .sidebar.active { left: 0; }
+            #content-wrapper { margin-left: 0; }
+            .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1020; display: none; }
+            .sidebar.active + .sidebar-overlay { display: block; }
+        }
+    </style>
+</head>
+<body>
+    <div id="loginScreen" class="login-container">
+        <div class="login-card">
+            <div class="card-header py-4 text-center"><h3 class="m-0 fw-bold">College Portal</h3><p class="mb-0 small opacity-75">Login or Register</p></div>
+            <div class="card-body p-4 p-md-5">
+                <form id="loginForm"><div class="form-floating mb-3"><input type="email" class="form-control" id="email" placeholder="name@college.edu" required><label for="email">Email Address</label></div><div class="form-floating mb-4"><input type="password" class="form-control" id="password" placeholder="Enter password" required><label for="password">Password</label></div><div class="d-grid mb-3"><button type="submit" class="btn btn-primary btn-lg">Login</button></div><div class="text-center"><a href="#" id="showRegister">Create an account</a></div></form>
+                <form id="registerForm" class="d-none"><div class="form-floating mb-3"><input type="text" class="form-control" id="regName" placeholder="John Doe" required><label for="regName">Full Name</label></div><div class="form-floating mb-3"><input type="email" class="form-control" id="regEmail" placeholder="name@college.edu" required><label for="regEmail">Email Address</label></div><div class="form-floating mb-3"><select class="form-select" id="regRole" required><option value="" selected disabled>Select your role...</option><option value="student">Student</option><option value="staff">Staff</option></select><label for="regRole">I am a...</label></div><div class="form-floating mb-3 d-none" id="studentIdBlock"><input type="text" class="form-control" id="studentId" placeholder="S12345"><label for="studentId">Student ID</label></div><div class="form-floating mb-3 d-none" id="staffIdBlock"><input type="text" class="form-control" id="staffId" placeholder="E12345"><label for="staffId">Staff ID</label></div><div class="form-floating mb-3"><input type="password" class="form-control" id="regPassword" placeholder="Create password" required><label for="regPassword">Password</label></div><div class="form-floating mb-3"><input type="password" class="form-control" id="regConfirmPassword" placeholder="Confirm password" required><label for="regConfirmPassword">Confirm Password</label></div><div class="d-grid mb-3"><button type="submit" class="btn btn-success btn-lg">Register</button></div><div class="text-center"><a href="#" id="showLogin">Back to login</a></div></form>
+            </div>
+        </div>
+    </div>
+
+    <div id="appScreen" class="d-none">
+        <div id="wrapper">
+            <div class="sidebar" id="sidebar"></div>
+            <div class="sidebar-overlay" id="sidebar-overlay"></div>
+            <div id="content-wrapper">
+                <nav class="topbar navbar navbar-expand navbar-light mb-4">
+                     <div class="container-fluid">
+                        <button id="sidebarToggle" class="btn btn-link d-md-none rounded-circle"><i class="fa fa-bars"></i></button>
+                        <ul class="navbar-nav ms-auto">
+                            <li class="nav-item dropdown"><a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM1YTdjNjkiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMjAgMjF2LTIuMDRhNC4zMiA0LjMyIDAgMCAwLTMuMTQtNC4xM00xNiAxMGExNCA0IDAgMSAxLTggMCA0IDQgMCAwIDEgOCAwWiIvPjxjaXJjbGUgY3g9IjEyIiBjeT0iMTIiIHI9IjEwIi8+PC9zdmc+" class="user-profile me-2"><span class="d-none d-lg-inline text-gray-600 small" id="userName"></span></a></li>
+                        </ul>
+                    </div>
+                </nav>
+                <div class="container-fluid" id="page-container"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="modals-container"></div>
+    
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+        
+        const generateSidebar = (role) => {
+            const brand = `<a class="sidebar-brand" href="#"><i class="fas fa-university"></i> <span id="collegeName">CollegeMS</span></a>`;
+            let links = '';
+            if (role === 'admin') {
+                links = `<li class="nav-item"><a class="nav-link active" href="#" data-target="#adminDashboard"><i class="fas fa-fw fa-tachometer-alt"></i><span>Dashboard</span></a></li><li class="nav-item"><a class="nav-link" href="#" data-target="#userManagementContent"><i class="fas fa-fw fa-users-cog"></i><span>User Management</span></a></li><li class="nav-item"><a class="nav-link" href="#" data-target="#coursesContent"><i class="fas fa-fw fa-book"></i><span>Courses</span></a></li><li class="nav-item"><a class="nav-link" href="#" data-target="#eventsContent"><i class="fas fa-fw fa-calendar-alt"></i><span>Events</span></a></li><li class="nav-item"><a class="nav-link" href="#" data-target="#settingsContent"><i class="fas fa-fw fa-cog"></i><span>Settings</span></a></li>`;
+            } else if (role === 'staff' || role === 'faculty') {
+                links = `<li class="nav-item"><a class="nav-link active" href="#" data-target="#facultyDashboard"><i class="fas fa-fw fa-tachometer-alt"></i><span>Dashboard</span></a></li><li class="nav-item"><a class="nav-link" href="#" data-target="#myCoursesContent"><i class="fas fa-fw fa-book-open-reader"></i><span>My Courses</span></a></li><li class="nav-item"><a class="nav-link" href="#" data-target="#uploadGradesContent"><i class="fas fa-fw fa-pen-to-square"></i><span>Upload Grades</span></a></li><li class="nav-item"><a class="nav-link" href="#" data-target="#manageAttendanceContent"><i class="fas fa-fw fa-user-check"></i><span>Manage Attendance</span></a></li><li class="nav-item"><a class="nav-link" href="#" data-target="#eventsContent"><i class="fas fa-fw fa-calendar-alt"></i><span>College Events</span></a></li>`;
+            } else if (role === 'student') {
+                links = `<li class="nav-item"><a class="nav-link active" href="#" data-target="#studentDashboard"><i class="fas fa-fw fa-tachometer-alt"></i><span>Dashboard</span></a></li><li class="nav-item"><a class="nav-link" href="#" data-target="#registerCoursesContent"><i class="fas fa-fw fa-edit"></i><span>Register for Courses</span></a></li><li class="nav-item"><a class="nav-link" href="#" data-target="#myGradesContent"><i class="fas fa-fw fa-chart-bar"></i><span>My Grades</span></a></li><li class="nav-item"><a class="nav-link" href="#" data-target="#myAttendanceContent"><i class="fas fa-fw fa-clipboard-list"></i><span>My Attendance</span></a></li><li class="nav-item"><a class="nav-link" href="#" data-target="#eventsContent"><i class="fas fa-fw fa-calendar-alt"></i><span>College Events</span></a></li>`;
+            }
+            const logoutLink = `<li class="nav-item"><a class="nav-link" href="#" id="logoutLink"><i class="fas fa-fw fa-sign-out-alt"></i><span>Logout</span></a></li>`;
+            return `${brand}<ul class="nav flex-column py-2">${links}${logoutLink}</ul>`;
+        };
+
+
+
+
+        const generatePageContent = () => {
+    return `
+        <!-- Admin: Dashboard -->
+        <div id="adminDashboard" class="page-content d-none">
+            <div class="d-sm-flex align-items-center justify-content-between mb-4"><h1 class="h3 mb-0 text-gray-800">Admin Dashboard</h1></div>
+            <div class="row">
+                <div class="col-xl-4 col-md-6 mb-4"><div class="card"><div class="card-body"><div class="row no-gutters align-items-center"><div class="col me-2"><div class="text-xs fw-bold text-primary text-uppercase mb-1">Students</div><div class="h5 mb-0 fw-bold text-gray-800" id="admin-student-count">0</div></div><div class="col-auto"><i class="fas fa-user-graduate fa-2x text-gray-300"></i></div></div></div></div></div>
+                <div class="col-xl-4 col-md-6 mb-4"><div class="card"><div class="card-body"><div class="row no-gutters align-items-center"><div class="col me-2"><div class="text-xs fw-bold text-success text-uppercase mb-1">Faculty & Staff</div><div class="h5 mb-0 fw-bold text-gray-800" id="admin-faculty-count">0</div></div><div class="col-auto"><i class="fas fa-chalkboard-teacher fa-2x text-gray-300"></i></div></div></div></div></div>
+                <div class="col-xl-4 col-md-6 mb-4"><div class="card"><div class="card-body"><div class="row no-gutters align-items-center"><div class="col me-2"><div class="text-xs fw-bold text-info text-uppercase mb-1">Courses</div><div class="h5 mb-0 fw-bold text-gray-800" id="admin-course-count">0</div></div><div class="col-auto"><i class="fas fa-book fa-2x text-gray-300"></i></div></div></div></div></div>
+            </div>
+        </div>
+
+        <!-- Student: Dashboard -->
+        <div id="studentDashboard" class="page-content d-none"><h1 class="h3 mb-4 text-gray-800">Student Dashboard</h1><div class="card shadow"><div class="card-body">Welcome! Your personalized dashboard is under construction.</div></div></div>
+        
+        <!-- Faculty: Dashboard -->
+        <div id="facultyDashboard" class="page-content d-none"><h1 class="h3 mb-4 text-gray-800">Faculty Dashboard</h1><div class="card shadow"><div class="card-body">Welcome! Your personalized dashboard is under construction.</div></div></div>
+        
+        <!-- Admin: User Management -->
+        <div id="userManagementContent" class="page-content d-none">
+            <h1 class="h3 mb-4 text-gray-800">User Management</h1>
+            <div class="card shadow">
+                <div class="card-header">All Users
+                    <div class="btn-group">
+                        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addStudentModal"><i class="fas fa-plus"></i> Add Student</button>
+                        <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#addStaffModal"><i class="fas fa-plus"></i> Add Staff</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>ID</th></tr></thead>
+                            <tbody id="user-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin: Course Management -->
+        <div id="coursesContent" class="page-content d-none">
+            <h1 class="h3 mb-4 text-gray-800">Course Management</h1>
+            <div class="card shadow">
+                <div class="card-header">All Courses <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addCourseModal"><i class="fas fa-plus"></i> Add Course</button></div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead><tr><th>Code</th><th>Name</th><th>Faculty</th><th>Schedule</th></tr></thead>
+                            <tbody id="course-table-body-admin"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin, Faculty, Student: Events Page -->
+        <div id="eventsContent" class="page-content d-none">
+             <h1 class="h3 mb-4 text-gray-800">College Events</h1>
+             <div class="card shadow">
+                <div class="card-header">Upcoming Events <button class="btn btn-primary btn-sm d-none" id="add-event-btn" data-bs-toggle="modal" data-bs-target="#addEventModal"><i class="fas fa-plus"></i> Add Event</button></div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead><tr><th>Date</th><th>Event</th><th>Coordinator</th><th>Location</th><th>Action</th></tr></thead>
+                            <tbody id="events-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin: Settings Page -->
+        <div id="settingsContent" class="page-content d-none">
+            <h1 class="h3 mb-4 text-gray-800">System Settings</h1>
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card shadow mb-4">
+                        <div class="card-header">College Information</div>
+                        <div class="card-body">
+                            <form id="collegeSettingsForm">
+                                <div class="mb-3"><label for="collegeNameInput" class="form-label">College Name</label><input type="text" class="form-control" id="collegeNameInput"></div>
+                                <div class="mb-3"><label for="collegeAddress" class="form-label">College Address</label><textarea class="form-control" id="collegeAddress" rows="3"></textarea></div>
+                                <div class="mb-3"><label for="collegeEmail" class="form-label">Contact Email</label><input type="email" class="form-control" id="collegeEmail"></div>
+                                <div class="mb-3"><label for="collegePhone" class="form-label">Contact Phone</label><input type="tel" class="form-control" id="collegePhone"></div>
+                                <button type="submit" class="btn btn-primary">Save Changes</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Faculty: My Courses Page -->
+        <div id="myCoursesContent" class="page-content d-none">
+            <h1 class="h3 mb-4 text-gray-800">My Courses</h1>
+            <div class="card shadow">
+                <div class="card-header">Course Selection</div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead><tr><th>Code</th><th>Name</th><th>Action</th></tr></thead>
+                            <tbody id="faculty-course-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Student: Register for Courses Page -->
+        <div id="registerCoursesContent" class="page-content d-none">
+            <h1 class="h3 mb-4 text-gray-800">Register for Courses</h1>
+            <div class="card shadow">
+                <div class="card-header">Available Courses</div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead><tr><th>Code</th><th>Name</th><th>Faculty</th><th>Schedule</th><th>Action</th></tr></thead>
+                            <tbody id="student-course-reg-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Student: My Grades Page -->
+        <div id="myGradesContent" class="page-content d-none">
+            <h1 class="h3 mb-4 text-gray-800">My Grades</h1>
+            <div id="student-grades-container"></div>
+        </div>
+        
+        <!-- Faculty: Upload Grades Page -->
+        <div id="uploadGradesContent" class="page-content d-none">
+            <h1 class="h3 mb-4 text-gray-800">Upload Grades</h1>
+            <div class="card shadow">
+                <div class="card-header">
+                    <select id="grade-course-select" class="form-select w-auto">
+                        <option selected>Select a course...</option>
+                    </select>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead><tr><th>Student</th><th>Q1(10)</th><th>Q2(10)</th><th>Q3(10)</th><th>CAT 1(50)</th><th>CAT 2(50)</th><th>FAT(100)</th><th>Grade(%)</th><th>Action</th></tr></thead>
+                            <tbody id="grade-management-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Student: My Attendance Page -->
+        <div id="myAttendanceContent" class="page-content d-none">
+            <h1 class="h3 mb-4 text-gray-800">My Attendance</h1>
+            <div id="student-attendance-container"></div>
+        </div>
+
+        <!-- Faculty: Manage Attendance Page -->
+        <div id="manageAttendanceContent" class="page-content d-none">
+            <h1 class="h3 mb-4 text-gray-800">Manage Attendance</h1>
+            <div class="card shadow">
+                <div class="card-header d-flex justify-content-between">
+                    <select id="attendance-course-select" class="form-select w-auto">
+                        <option selected>Select a course...</option>
+                    </select>
+                </div>
+                <div class="card-body">
+                    <div id="attendance-history-view" class="mb-4"></div>
+                    <button id="take-attendance-btn" class="btn btn-primary mb-3" disabled>Take/Update Today's Attendance</button>
+                    <div id="attendance-sheet" class="d-none">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead><tr><th>Student Name</th><th>Status for <span id="attendance-date"></span></th></tr></thead>
+                                <tbody id="attendance-sheet-body"></tbody>
+                            </table>
+                        </div>
+                        <div id="submit-attendance-container" class="text-end mt-3"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+};
+
+
+        const generateModals = () => {
+    return `
+        <div class="modal fade" id="addStudentModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Add New Student</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><form id="addStudentForm"><div class="form-floating mb-3"><input type="text" id="newStudentName" class="form-control" placeholder="Full Name" required><label>Full Name</label></div><div class="form-floating mb-3"><input type="email" id="newStudentEmail" class="form-control" placeholder="Email" required><label>Email Address</label></div><div class="form-floating mb-3"><input type="text" id="newStudentId" class="form-control" placeholder="Student ID" required><label>Student ID</label></div><div class="form-floating mb-3"><input type="password" id="newStudentPassword" class="form-control" placeholder="Password" required><label>Temporary Password</label></div></form></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="button" class="btn btn-primary" id="saveNewStudentBtn">Save Student</button></div></div></div></div>
+        <div class="modal fade" id="addStaffModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Add New Staff/Faculty</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><form id="addStaffForm"><div class="form-floating mb-3"><input type="text" id="newStaffName" class="form-control" placeholder="Full Name" required><label>Full Name</label></div><div class="form-floating mb-3"><input type="email" id="newStaffEmail" class="form-control" placeholder="Email" required><label>Email Address</label></div><div class="form-floating mb-3"><input type="text" id="newStaffId" class="form-control" placeholder="Staff ID" required><label>Staff ID</label></div><div class="form-floating mb-3"><input type="password" id="newStaffPassword" class="form-control" placeholder="Password" required><label>Temporary Password</label></div></form></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="button" class="btn btn-primary" id="saveNewStaffBtn">Save Staff</button></div></div></div></div>
+        <div class="modal fade" id="addCourseModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Add New Course</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><form id="addCourseForm"><div class="form-floating mb-3"><input type="text" id="newCourseCode" class="form-control" placeholder="e.g., CS101" required><label>Course Code</label></div><div class="form-floating mb-3"><input type="text" id="newCourseName" class="form-control" placeholder="e.g., Introduction to Programming" required><label>Course Name</label></div><div class="form-floating mb-3"><input type="number" id="newCourseCredits" class="form-control" placeholder="e.g., 3" required><label>Credits</label></div></form></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="button" class="btn btn-primary" id="saveNewCourseBtn">Save Course</button></div></div></div></div>
+        <div class="modal fade" id="addEventModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Add New Event</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><form id="addEventForm"><div class="form-floating mb-3"><input type="text" id="newEventTitle" class="form-control" placeholder="Event Title" required><label>Event Title</label></div><div class="form-floating mb-3"><input type="date" id="newEventDate" class="form-control" required><label>Date</label></div><div class="form-floating mb-3"><input type="text" id="newEventCategory" class="form-control" placeholder="e.g., Workshop" required><label>Category</label></div><div class="form-floating mb-3"><input type="text" id="newEventLocation" class="form-control" placeholder="e.g., Main Auditorium" required><label>Location</label></div><div class="form-floating mb-3"><select id="newEventCoordinator" class="form-select"><option value="">No Coordinator</option></select><label>Faculty Coordinator</label></div></form></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="button" class="btn btn-primary" id="saveNewEventBtn">Save Event</button></div></div></div></div>
+        <div class="modal fade" id="scheduleCourseModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Set Course Schedule</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><form id="scheduleCourseForm"><input type="hidden" id="scheduleCourseId"><p>Select days for <strong id="scheduleCourseName"></strong>:</p><div class="d-flex justify-content-around mb-3"><div class="form-check"><input class="form-check-input" type="checkbox" value="Mon" id="dayMon"><label class="form-check-label" for="dayMon">Mon</label></div><div class="form-check"><input class="form-check-input" type="checkbox" value="Tue" id="dayTue"><label class="form-check-label" for="dayTue">Tue</label></div><div class="form-check"><input class="form-check-input" type="checkbox" value="Wed" id="dayWed"><label class="form-check-label" for="dayWed">Wed</label></div><div class="form-check"><input class="form-check-input" type="checkbox" value="Thu" id="dayThu"><label class="form-check-label" for="dayThu">Thu</label></div><div class="form-check"><input class="form-check-input" type="checkbox" value="Fri" id="dayFri"><label class="form-check-label" for="dayFri">Fri</label></div></div><div class="form-floating"><input type="text" id="scheduleTime" class="form-control" placeholder="e.g., 10:00 AM - 11:30 AM" required><label>Time Slot</label></div></form></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="button" class="btn btn-primary" id="saveScheduleBtn">Save Schedule</button></div></div></div></div>
+        <div class="modal fade" id="viewRosterModal" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Student Roster for <span id="rosterCourseName"></span></h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><table class="table"><thead><tr><th>Name</th><th>Email</th><th>Student ID</th></tr></thead><tbody id="roster-table-body"></tbody></table></div></div></div></div>
+    `;
+};
+
+async function apiRequest(endpoint, method = 'GET', body = null) { const config = { method, headers: {'Content-Type': 'application/json'} }; if (body) config.body = JSON.stringify(body); const token = localStorage.getItem('cms_token'); if (token) config.headers['Authorization'] = `Bearer ${token}`; try { const response = await fetch(`${API_URL}${endpoint}`, config); if (!response.ok) { const errorData = await response.json(); throw new Error(errorData.message || 'An unknown error occurred'); } return await response.json(); } catch (error) { alert(error.message); throw error; } }
+
+$(document).ready(function() {
+    if (localStorage.getItem('cms_token')) { const user = JSON.parse(localStorage.getItem('cms_currentUser')); showAppScreen(user); }
+    $('#loginForm').on('submit', async function(e) { e.preventDefault(); try { const data = await apiRequest('/auth/login', 'POST', { email: $('#email').val(), password: $('#password').val() }); localStorage.setItem('cms_token', data.token); localStorage.setItem('cms_currentUser', JSON.stringify({ name: data.name, email: data.email, role: data.role, _id: data._id })); showAppScreen(data); } catch (error) { console.error('Login failed:', error); } });
+    $('#registerForm').on('submit', async function(e) { e.preventDefault(); const password = $('#regPassword').val(); if (password !== $('#regConfirmPassword').val()) return alert('Passwords do not match'); const role = $('#regRole').val(); let roleId = (role === 'student') ? $('#studentId').val() : $('#staffId').val(); if (!roleId) return alert('Please enter your Student or Staff ID.'); const registrationData = { name: $('#regName').val(), email: $('#regEmail').val(), password, role, roleId }; try { await apiRequest('/auth/register', 'POST', registrationData); alert('Registration successful! Please login.'); $('#showLogin').click(); $('#registerForm')[0].reset(); $('#studentIdBlock, #staffIdBlock').addClass('d-none'); } catch (error) { console.error('Registration failed:', error); } });
+    $('#regRole').on('change', function() { const role = $(this).val(); $('#studentIdBlock').toggleClass('d-none', role !== 'student'); $('#staffIdBlock').toggleClass('d-none', role !== 'staff'); });
+    $('#showRegister, #showLogin').on('click', function(e) { e.preventDefault(); $('#loginForm, #registerForm').toggleClass('d-none'); });
+});
+
+async function showAppScreen(user) {
+    $('#loginScreen').addClass('d-none'); $('#appScreen').removeClass('d-none');
+    $('#userName').text(user.name);
+    $('#sidebar').html(generateSidebar(user.role));
+    $('#page-container').html(generatePageContent());
+    $('#modals-container').html(generateModals());
+    attachDynamicEventHandlers();
+    if (user.role === 'admin') { $('#adminDashboard').removeClass('d-none'); loadAdminDashboard(); } 
+    else if (user.role === 'student') { $('#studentDashboard').removeClass('d-none'); } 
+    else { $('#facultyDashboard').removeClass('d-none'); }
+}
+
+// Load Events for all roles (Admin, Faculty, Student)
+async function loadEvents() {
+    const currentUser = JSON.parse(localStorage.getItem('cms_currentUser'));
+    const tableBody = $('#events-table-body');
+    const addEventBtn = $('#add-event-btn');
+
+    tableBody.html('<tr><td colspan="5" class="text-center">Loading events...</td></tr>');
+
+    try {
+        const events = await apiRequest('/data/events');
+        tableBody.empty();
+
+        if (events.length > 0) {
+            events.forEach(event => {
+                const eventDate = new Date(event.date).toLocaleDateString('en-IN', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric'
+                });
+
+                // Default: all roles can view
+                let actionHtml = `<button class="btn btn-sm btn-info view-event-btn" data-event-id="${event._id}">View</button>`;
+
+                // Admin: can edit/delete events
+                if (currentUser.role === 'admin') {
+                    actionHtml = `
+                        <button class="btn btn-sm btn-warning edit-event-btn" data-event-id="${event._id}">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger delete-event-btn" data-event-id="${event._id}">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    `;
+                }
+
+                // Faculty: can mark as coordinator
+                if (currentUser.role === 'faculty' && event.coordinator && event.coordinator._id === currentUser._id) {
+                    actionHtml = `<span class="badge bg-success">Coordinator</span>`;
+                }
+
+                // Student: register option
+                if (currentUser.role === 'student') {
+                    const isRegistered = event.participants?.includes(currentUser._id);
+                    actionHtml = isRegistered
+                        ? `<button class="btn btn-sm btn-secondary" disabled>Registered</button>`
+                        : `<button class="btn btn-sm btn-success register-event-btn" data-event-id="${event._id}">Register</button>`;
+                }
+
+                tableBody.append(`
+                    <tr>
+                        <td>${eventDate}</td>
+                        <td>${event.title}</td>
+                        <td>${event.coordinator ? event.coordinator.name : '<span class="text-muted">N/A</span>'}</td>
+                        <td>${event.location}</td>
+                        <td>${actionHtml}</td>
+                    </tr>
+                `);
+            });
+
+            // 🔹 Attach event listeners for Admin actions
+            $('.edit-event-btn').click(function () {
+                const eventId = $(this).data('event-id');
+                openEditEventModal(eventId);
+            });
+
+            $('.delete-event-btn').click(async function () {
+                const eventId = $(this).data('event-id');
+                if (confirm("Are you sure you want to delete this event?")) {
+                    try {
+                        await apiRequest(`/data/events/${eventId}`, 'DELETE');
+                        alert("Event deleted successfully!");
+                        loadEvents(); // Refresh list
+                    } catch (error) {
+                        alert("Failed to delete event.");
+                        console.error(error);
+                    }
+                }
+            });
+
+        } else {
+            tableBody.html('<tr><td colspan="5" class="text-center">No upcoming events.</td></tr>');
+        }
+
+        // Show "Add Event" button only for Admins
+        if (currentUser.role === 'admin') {
+            addEventBtn.removeClass('d-none');
+        } else {
+            addEventBtn.addClass('d-none');
+        }
+
+    } catch (error) {
+        console.error("Failed to load events:", error);
+        tableBody.html('<tr><td colspan="5" class="text-center text-danger">Could not load events.</td></tr>');
+    }
+}
+
+
+
+function attachDynamicEventHandlers() {
+    const appContainer = $(document.body);
+    appContainer.off('.app'); // Remove old event handlers
+
+    // Sidebar navigation
+    appContainer.on('click.app', '#sidebar .nav-link:not(#logoutLink)', function(e) {
+        e.preventDefault();
+        $('#sidebar .nav-link').removeClass('active');
+        $(this).addClass('active');
+
+        const targetId = $(this).data('target');
+        $('.page-content').addClass('d-none');
+        $(targetId).removeClass('d-none');
+
+        switch (targetId) {
+            case '#userManagementContent': loadAllUsers(); break;
+            case '#coursesContent': loadCoursesForAdmin(); break;
+            case '#eventsContent': loadEvents(); break;
+            case '#myCoursesContent': loadCoursesForFaculty(); break;
+            case '#registerCoursesContent': loadCoursesForStudentRegistration(); break;
+            case '#settingsContent': loadSettings(); break;
+            case '#adminDashboard': loadAdminDashboard(); break;
+            case '#myGradesContent': loadMyGrades(); break;
+            case '#uploadGradesContent': loadFacultyCoursesForGrading(); break;
+            case '#myAttendanceContent': loadMyAttendance(); break;
+            case '#manageAttendanceContent': loadFacultyCoursesForAttendance(); break;
+        }
+
+        if ($(window).width() < 768) {
+            $('#sidebar, #sidebar-overlay').removeClass('active');
+        }
+    });
+
+    // Logout
+    appContainer.on('click.app', '#logoutLink', function(e) {
+        e.preventDefault();
+        localStorage.clear();
+        window.location.reload();
+    });
+
+    // Sidebar toggle
+    appContainer.on('click.app', '#sidebarToggle, #sidebar-overlay', function() {
+        $('#sidebar, #sidebar-overlay').toggleClass('active');
+    });
+
+    // Other dynamic handlers (modals, attendance, marks, etc.) remain same...
+}
+
+        
+        async function loadAdminDashboard() { try { const [stats, events] = await Promise.all([apiRequest('/data/stats'), apiRequest('/data/events')]); $('#admin-student-count').text(stats.students); $('#admin-faculty-count').text(stats.faculty); $('#admin-course-count').text(stats.courses); const eventsContainer = $('#admin-events-container'); eventsContainer.empty(); if (events && events.length > 0) { events.forEach(event => { const eventDate = new Date(event.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }); const eventHtml = `<div class="mb-3 border-bottom pb-2"><div class="small text-muted">${eventDate} · ${event.category}</div><span class="fw-bold">${event.title}</span><div class="small">${event.location}</div></div>`; eventsContainer.append(eventHtml); }); } else { eventsContainer.html('<p>No upcoming events.</p>'); } } catch (error) { console.error("Failed to load admin dashboard data:", error); } }
+        async function loadAllUsers() { try { const users = await apiRequest('/data/users'); const tableBody = $('#user-table-body'); tableBody.empty(); if (users.length > 0) { users.forEach(user => { const roleDisplay = user.role.charAt(0).toUpperCase() + user.role.slice(1); tableBody.append(`<tr><td>${user.name}</td><td>${user.email}</td><td>${roleDisplay}</td><td>${user.roleId || 'N/A'}</td></tr>`); }); } else { tableBody.html('<tr><td colspan="4" class="text-center">No users found.</td></tr>'); } } catch (error) { console.error("Failed to load users:", error); tableBody.html('<tr><td colspan="4" class="text-center text-danger">Could not load user data.</td></tr>'); } }
+        async function loadCoursesForAdmin() { try { const courses = await apiRequest('/data/courses'); const tableBody = $('#course-table-body-admin'); tableBody.empty(); if (courses.length > 0) { courses.forEach(course => { const facultyName = course.faculty ? course.faculty.name : '<span class="text-muted">Unassigned</span>'; const schedule = course.schedule.time ? `${course.schedule.days.join(', ')} at ${course.schedule.time}` : ''; tableBody.append(`<tr><td>${course.courseCode}</td><td>${course.courseName}</td><td>${facultyName}</td><td>${schedule}</td></tr>`); }); } else { tableBody.html('<tr><td colspan="4" class="text-center">No courses found.</td></tr>'); } } catch (error) { console.error("Failed to load courses for admin:", error); } }
+        async function loadCoursesForFaculty() { const currentUser = JSON.parse(localStorage.getItem('cms_currentUser')); try { const courses = await apiRequest('/data/courses'); const tableBody = $('#faculty-course-table-body'); tableBody.empty(); if (courses.length > 0) { courses.forEach(course => { let actionHtml = ''; if (!course.faculty) { actionHtml = `<button class="btn btn-success btn-sm teach-course-btn" data-course-id="${course._id}" data-course-name="${course.courseName}">Teach this Course</button>`; } else if (course.faculty._id === currentUser._id) { actionHtml = `<div><span class="text-success fw-bold">You are teaching this</span><br><small>${course.schedule.days.join(', ')} - ${course.schedule.time}</small></div><button class="btn btn-info btn-sm view-roster-btn mt-2" data-course-id="${course._id}" data-course-name="${course.courseName}">View Roster</button>`; } else { actionHtml = `<span>Assigned to ${course.faculty.name}</span>`; } tableBody.append(`<tr><td>${course.courseCode}</td><td>${course.courseName}</td><td>${actionHtml}</td></tr>`); }); } else { tableBody.html('<tr><td colspan="3" class="text-center">No courses found.</td></tr>'); } } catch (error) { console.error("Failed to load courses for faculty:", error); } }
+        async function loadCoursesForStudentRegistration() { const currentUser = JSON.parse(localStorage.getItem('cms_currentUser')); try { const [courses, myData] = await Promise.all([apiRequest('/data/courses'), apiRequest(`/data/users/${currentUser._id}`)]); const tableBody = $('#student-course-reg-body'); tableBody.empty(); if (courses.filter(c => c.faculty).length > 0) { courses.forEach(course => { if(!course.faculty) return; const isRegistered = myData.courses.includes(course._id); const actionHtml = isRegistered ? `<button class="btn btn-secondary btn-sm" disabled>Registered</button>` : `<button class="btn btn-success btn-sm register-course-btn" data-course-id="${course._id}">Register</button>`; const schedule = course.schedule.time ? `${course.schedule.days.join(', ')} at ${course.schedule.time}` : 'Not Scheduled'; const facultyName = course.faculty ? course.faculty.name : 'TBD'; tableBody.append(`<tr><td>${course.courseCode}</td><td>${course.courseName}</td><td>${facultyName}</td><td>${schedule}</td><td>${actionHtml}</td></tr>`); }); } else { tableBody.html('<tr><td colspan="5" class="text-center">No courses are available for registration yet.</td></tr>'); } } catch (error) { console.error("Failed to load courses for registration:", error); } }
+        async function loadRoster(courseId, courseName) { $('#rosterCourseName').text(courseName); const tableBody = $('#roster-table-body'); tableBody.html('<tr><td colspan="3" class="text-center">Loading...</td></tr>'); const rosterModal = new bootstrap.Modal(document.getElementById('viewRosterModal')); rosterModal.show(); try { const roster = await apiRequest(`/data/courses/${courseId}/roster`); tableBody.empty(); if (roster.length > 0) { roster.forEach(student => { tableBody.append(`<tr><td>${student.name}</td><td>${student.email}</td><td>${student.roleId}</td></tr>`); }); } else { tableBody.html('<tr><td colspan="3" class="text-center">No students have registered for this course yet.</td></tr>'); } } catch (error) { console.error("Failed to load roster:", error); } }
+        async function loadMyGrades() { const container = $('#student-grades-container'); container.html('<p>Loading grades...</p>'); try { const marksList = await apiRequest('/data/my/marks'); container.empty(); if (marksList.length > 0) { marksList.forEach(marks => { const gradeColor = marks.totalPercentage >= 75 ? 'bg-success' : marks.totalPercentage >= 40 ? 'bg-warning' : 'bg-danger'; const card = `<div class="card mb-4 grade-card"><div class="card-header d-flex justify-content-between"><span>${marks.course.courseCode} - ${marks.course.courseName}</span><span class="total-grade ${gradeColor.replace('bg-', 'text-')}">${marks.totalPercentage}%</span></div><div class="card-body"><div class="row align-items-center"><div class="col-md-4"><div class="progress-label">Internals (Quizzes): <strong>${marks.internalPercentage.toFixed(2)} / 30%</strong></div><div class="progress"><div class="progress-bar bg-info" style="width: ${(marks.internalPercentage/30)*100}%"></div></div></div><div class="col-md-4"><div class="progress-label">CATs: <strong>${marks.catPercentage.toFixed(2)} / 30%</strong></div><div class="progress"><div class="progress-bar bg-warning" style="width: ${(marks.catPercentage/30)*100}%"></div></div></div><div class="col-md-4"><div class="progress-label">Final Assessment (FAT): <strong>${marks.fatPercentage.toFixed(2)} / 40%</strong></div><div class="progress"><div class="progress-bar bg-danger" style="width: ${(marks.fatPercentage/40)*100}%"></div></div></div></div></div></div>`; container.append(card); }); } else { container.html('<div class="card"><div class="card-body">No marks have been uploaded for your courses yet.</div></div>'); } } catch (error) { console.error("Failed to load grades:", error); } }
+        async function loadFacultyCoursesForGrading() { const select = $('#grade-course-select'); select.html('<option selected>Loading courses...</option>'); try { const courses = await apiRequest('/data/courses'); const myCourses = courses.filter(c => c.faculty && c.faculty._id === JSON.parse(localStorage.getItem('cms_currentUser'))._id); select.empty().append('<option selected disabled value="">Select a course...</option>'); if (myCourses.length > 0) { myCourses.forEach(course => { select.append(`<option value="${course._id}">${course.courseCode} - ${course.courseName}</option>`); }); } else { select.append('<option disabled>You are not assigned to any courses.</option>'); } } catch (error) { console.error('Failed to load faculty courses:', error); } }
+        async function loadGradebookForCourse(courseId) { const tableBody = $('#grade-management-table-body'); tableBody.html('<tr><td colspan="9" class="text-center">Loading students...</td></tr>'); try { const [roster, marksList] = await Promise.all([apiRequest(`/data/courses/${courseId}/roster`), apiRequest(`/data/courses/${courseId}/marks`)]); tableBody.empty(); if (roster.length > 0) { roster.forEach(student => { const marks = marksList.find(m => m.student._id === student._id) || {}; const row = `<tr><td>${student.name}</td><td><input type="number" class="form-control marks-input quiz1-input" value="${marks.quiz1 !== null ? marks.quiz1 : ''}"></td><td><input type="number" class="form-control marks-input quiz2-input" value="${marks.quiz2 !== null ? marks.quiz2 : ''}"></td><td><input type="number" class="form-control marks-input quiz3-input" value="${marks.quiz3 !== null ? marks.quiz3 : ''}"></td><td><input type="number" class="form-control marks-input cat1-input" value="${marks.cat1 !== null ? marks.cat1 : ''}"></td><td><input type="number" class="form-control marks-input cat2-input" value="${marks.cat2 !== null ? marks.cat2 : ''}"></td><td><input type="number" class="form-control marks-input fat-input" value="${marks.fat !== null ? marks.fat : ''}"></td><td class="live-grade fw-bold">${marks.totalPercentage || 0}%</td><td><button class="btn btn-primary btn-sm save-marks-btn" data-student-id="${student._id}" data-course-id="${courseId}">Save</button></td></tr>`; tableBody.append(row); }); } else { tableBody.html('<tr><td colspan="9" class="text-center">No students are registered for this course.</td></tr>'); } } catch (error) { console.error('Failed to load gradebook:', error); } }
+        async function loadMyAttendance() { const container = $('#student-attendance-container'); container.html('<p>Loading attendance records...</p>'); try { const attendanceList = await apiRequest('/data/my/attendance'); container.empty(); if (attendanceList.length > 0) { attendanceList.forEach(att => { const attColor = att.percentage >= 75 ? 'bg-success' : att.percentage >= 60 ? 'bg-warning' : 'bg-danger'; const card = `<div class="card mb-3 attendance-card"><div class="card-header">${att.course.courseCode} - ${att.course.courseName}</div><div class="card-body text-center"><div class="progress"><div class="progress-bar ${attColor}" style="width: ${att.percentage}%" role="progressbar">${att.percentage}%</div></div><div class="mt-2 small text-muted">Attended ${att.present} of ${att.total} classes.</div></div></div>`; container.append(card); }); } else { container.html('<div class="card"><div class="card-body">No attendance has been recorded for your courses yet.</div></div>'); } } catch(error) { console.error("Failed to load attendance:", error); } }
+        async function loadFacultyCoursesForAttendance() { const select = $('#attendance-course-select'); select.html('<option selected>Loading courses...</option>'); try { const courses = await apiRequest('/data/courses'); const myCourses = courses.filter(c => c.faculty && c.faculty._id === JSON.parse(localStorage.getItem('cms_currentUser'))._id); select.empty().append('<option selected disabled value="">Select a course...</option>'); if (myCourses.length > 0) { myCourses.forEach(course => { select.append(`<option value="${course._id}">${course.courseCode} - ${course.courseName}</option>`); }); } else { select.append('<option disabled>You are not assigned to any courses.</option>'); } } catch (error) { console.error('Failed to load faculty courses:', error); } }
+        async function loadAttendanceSheet(courseId) { const tableBody = $('#attendance-sheet-body'); tableBody.html('<tr><td colspan="2" class="text-center">Loading students...</td></tr>'); const today = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }); $('#attendance-date').text(today); try { const roster = await apiRequest(`/data/courses/${courseId}/roster`); tableBody.empty(); if (roster.length > 0) { roster.forEach((student, index) => { const row = `<tr data-student-id="${student._id}"><td>${student.name}</td><td><div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="status-${index}" value="Present" checked><label class="form-check-label">Present</label></div><div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="status-${index}" value="Absent"><label class="form-check-label">Absent</label></div></td></tr>`; tableBody.append(row); }); $('#submit-attendance-container').html(`<button id="submit-attendance-btn" class="btn btn-success" data-course-id="${courseId}" data-date="${new Date().toISOString()}">Submit Attendance</button>`); } else { tableBody.html('<tr><td colspan="2" class="text-center">No students are registered for this course.</td></tr>'); } } catch (error) { console.error('Failed to load roster for attendance:', error); } }
+        async function loadSettings() { try { const settings = await apiRequest('/data/settings'); $('#collegeNameInput').val(settings.collegeName); $('#collegeAddress').val(settings.address); $('#collegeEmail').val(settings.email); $('#collegePhone').val(settings.phone); } catch (error) { console.error('Failed to load settings:', error); } }
+    </script>
+</body>
+</html>
+
