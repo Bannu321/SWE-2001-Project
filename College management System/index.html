@@ -417,7 +417,6 @@ async function loadEvents() {
 }
 
 
-
 function attachDynamicEventHandlers() {
     const appContainer = $(document.body);
     appContainer.off('.app'); // Remove old event handlers
@@ -451,22 +450,99 @@ function attachDynamicEventHandlers() {
         }
     });
 
-    // Logout
-    appContainer.on('click.app', '#logoutLink', function(e) {
-        e.preventDefault();
-        localStorage.clear();
-        window.location.reload();
+    // Logout and Sidebar Toggle
+    appContainer.on('click.app', '#logoutLink', function(e) { e.preventDefault(); localStorage.clear(); window.location.reload(); });
+    appContainer.on('click.app', '#sidebarToggle, #sidebar-overlay', function() { $('#sidebar, #sidebar-overlay').toggleClass('active'); });
+
+    // --- ADMIN MODAL HANDLERS (from previous fix) ---
+    appContainer.on('click.app', '#saveNewStudentBtn', async function() { /* ... code from previous fix ... */ });
+    appContainer.on('click.app', '#saveNewStaffBtn', async function() { /* ... code from previous fix ... */ });
+    appContainer.on('click.app', '#saveNewCourseBtn', async function() { /* ... code from previous fix ... */ });
+    appContainer.on('click.app', '#saveNewEventBtn', async function() { /* ... code from previous fix ... */ });
+    
+    // =================================================================
+    // START: ADD THE FOLLOWING NEW CODE FOR FACULTY & STUDENTS
+    // =================================================================
+
+    // NEW: Handler for FACULTY to click "Teach this Course"
+    // This opens the modal to set a schedule.
+    appContainer.on('click.app', '.teach-course-btn', function() {
+        const courseId = $(this).data('course-id');
+        const courseName = $(this).data('course-name');
+        $('#scheduleCourseId').val(courseId);
+        $('#scheduleCourseName').text(courseName);
+        const scheduleModal = new bootstrap.Modal($('#scheduleCourseModal'));
+        scheduleModal.show();
     });
 
-    // Sidebar toggle
-    appContainer.on('click.app', '#sidebarToggle, #sidebar-overlay', function() {
-        $('#sidebar, #sidebar-overlay').toggleClass('active');
+    // NEW: Handler for FACULTY to SAVE the schedule after setting it
+    appContainer.on('click.app', '#saveScheduleBtn', async function() {
+        const courseId = $('#scheduleCourseId').val();
+        const schedule = {
+            days: $('input[id^="day"]:checked').map(function() { return $(this).val(); }).get(),
+            time: $('#scheduleTime').val()
+        };
+
+        if (schedule.days.length === 0 || !schedule.time) {
+            return alert('Please select at least one day and provide a time slot.');
+        }
+
+        try {
+            await apiRequest('/data/courses/assign', 'POST', { courseId, schedule });
+            alert('You have been assigned to the course and the schedule is set!');
+            bootstrap.Modal.getInstance($('#scheduleCourseModal')).hide();
+            loadCoursesForFaculty(); // Refresh the faculty course list
+        } catch (error) {
+            console.error('Failed to set schedule:', error);
+            alert('Error: Could not set the course schedule.');
+        }
     });
 
-    // Other dynamic handlers (modals, attendance, marks, etc.) remain same...
+    // NEW: Handler for STUDENT to register for a course
+    appContainer.on('click.app', '.register-course-btn', async function() {
+        const courseId = $(this).data('course-id');
+        if (confirm('Are you sure you want to register for this course?')) {
+            try {
+                await apiRequest('/data/courses/register', 'POST', { courseId });
+                alert('Successfully registered for the course!');
+                loadCoursesForStudentRegistration(); // Refresh list to show "Registered"
+            } catch (error) {
+                console.error('Failed to register for course:', error);
+                alert('Error: Could not register for the course.');
+            }
+        }
+    });
+
+    // NEW: Handler for STUDENT to register for an event
+    appContainer.on('click.app', '.register-event-btn', async function() {
+        const eventId = $(this).data('event-id');
+         if (confirm('Are you sure you want to register for this event?')) {
+            try {
+                await apiRequest(`/data/events/${eventId}/register`, 'POST');
+                alert('Successfully registered for the event!');
+                loadEvents(); // Refresh event list
+            } catch (error) {
+                console.error('Failed to register for event:', error);
+                alert('Error: Could not register for the event.');
+            }
+        }
+    });
+    
+    // NEW: Handler for FACULTY to view student roster
+    appContainer.on('click.app', '.view-roster-btn', function() {
+        const courseId = $(this).data('course-id');
+        const courseName = $(this).data('course-name');
+        loadRoster(courseId, courseName);
+    });
+
+    // =================================================================
+    // END: ADDED NEW CODE
+    // =================================================================
 }
-
         
+
+
+
         async function loadAdminDashboard() { try { const [stats, events] = await Promise.all([apiRequest('/data/stats'), apiRequest('/data/events')]); $('#admin-student-count').text(stats.students); $('#admin-faculty-count').text(stats.faculty); $('#admin-course-count').text(stats.courses); const eventsContainer = $('#admin-events-container'); eventsContainer.empty(); if (events && events.length > 0) { events.forEach(event => { const eventDate = new Date(event.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }); const eventHtml = `<div class="mb-3 border-bottom pb-2"><div class="small text-muted">${eventDate} · ${event.category}</div><span class="fw-bold">${event.title}</span><div class="small">${event.location}</div></div>`; eventsContainer.append(eventHtml); }); } else { eventsContainer.html('<p>No upcoming events.</p>'); } } catch (error) { console.error("Failed to load admin dashboard data:", error); } }
         async function loadAllUsers() { try { const users = await apiRequest('/data/users'); const tableBody = $('#user-table-body'); tableBody.empty(); if (users.length > 0) { users.forEach(user => { const roleDisplay = user.role.charAt(0).toUpperCase() + user.role.slice(1); tableBody.append(`<tr><td>${user.name}</td><td>${user.email}</td><td>${roleDisplay}</td><td>${user.roleId || 'N/A'}</td></tr>`); }); } else { tableBody.html('<tr><td colspan="4" class="text-center">No users found.</td></tr>'); } } catch (error) { console.error("Failed to load users:", error); tableBody.html('<tr><td colspan="4" class="text-center text-danger">Could not load user data.</td></tr>'); } }
         async function loadCoursesForAdmin() { try { const courses = await apiRequest('/data/courses'); const tableBody = $('#course-table-body-admin'); tableBody.empty(); if (courses.length > 0) { courses.forEach(course => { const facultyName = course.faculty ? course.faculty.name : '<span class="text-muted">Unassigned</span>'; const schedule = course.schedule.time ? `${course.schedule.days.join(', ')} at ${course.schedule.time}` : ''; tableBody.append(`<tr><td>${course.courseCode}</td><td>${course.courseName}</td><td>${facultyName}</td><td>${schedule}</td></tr>`); }); } else { tableBody.html('<tr><td colspan="4" class="text-center">No courses found.</td></tr>'); } } catch (error) { console.error("Failed to load courses for admin:", error); } }
